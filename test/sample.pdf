@@ -1,0 +1,60 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 156 >>
+stream
+BT /F1 36 Tf 72 720 Td (Test Page 1 of 3) Tj ET
+BT /F1 18 Tf 72 680 Td (pdf2img sample - rendered fully client-side) Tj ET
+1 0 0 RG 4 w 72 100 m 523 740 l S
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 156 >>
+stream
+BT /F1 36 Tf 72 720 Td (Test Page 2 of 3) Tj ET
+BT /F1 18 Tf 72 680 Td (pdf2img sample - rendered fully client-side) Tj ET
+1 0 0 RG 4 w 72 100 m 523 740 l S
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 9 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 156 >>
+stream
+BT /F1 36 Tf 72 720 Td (Test Page 3 of 3) Tj ET
+BT /F1 18 Tf 72 680 Td (pdf2img sample - rendered fully client-side) Tj ET
+1 0 0 RG 4 w 72 100 m 523 740 l S
+endstream
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000127 00000 n 
+0000000253 00000 n 
+0000000460 00000 n 
+0000000586 00000 n 
+0000000793 00000 n 
+0000000919 00000 n 
+0000001126 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1196
+%%EOF
