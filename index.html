@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDF to Image — Convert PDFs to PNG/JPEG in your browser</title>
-  <meta name="description" content="Convert PDF pages to PNG or JPEG images entirely in your browser. Files never leave your device — 100% client-side, no upload, no server." />
+  <title>PDF 转图片 — 在浏览器里把 PDF 转成 PNG/JPEG</title>
+  <meta name="description" content="在浏览器里把 PDF 每一页转成 PNG 或 JPEG 图片。文件不会离开你的设备 —— 100% 本地处理，不上传、不需要服务器。" />
   <link rel="stylesheet" href="style.css" />
   <!-- Vendored libraries (no CDN, works offline). See vendor/ -->
   <script src="vendor/pdf.min.js"></script>
@@ -14,10 +14,10 @@
   <header class="site-header">
     <div class="wrap">
       <h1 class="logo">PDF<span>2</span>Image</h1>
-      <p class="tagline">Turn PDF pages into PNG or JPEG images — right here in your browser.</p>
+      <p class="tagline">在浏览器里把 PDF 每一页转成 PNG 或 JPEG 图片。</p>
       <p class="privacy" role="note">
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8Z"/></svg>
-        100% private. Files are processed locally and never uploaded. No server, no tracking.
+        100% 私密。文件全程在本地处理，绝不上传。没有服务器，不做追踪。
       </p>
     </div>
   </header>
@@ -25,58 +25,61 @@
   <main class="wrap">
     <!-- Drop zone -->
     <section id="dropzone" class="dropzone" tabindex="0" role="button"
-             aria-label="Drop a PDF here or click to choose a file">
+             aria-label="把 PDF 拖到这里，或点击选择文件">
       <input type="file" id="fileInput" accept="application/pdf,.pdf" hidden />
       <svg class="drop-icon" width="48" height="48" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="7 9 12 4 17 9"/>
         <line x1="12" y1="4" x2="12" y2="16"/>
       </svg>
-      <p class="drop-title">Drop your PDF here</p>
-      <p class="drop-sub">or <span class="link">click to browse</span> · stays on your device</p>
+      <p class="drop-title">把 PDF 拖到这里</p>
+      <p class="drop-sub">或<span class="link">点击选择文件</span> · 文件只留在你的设备上</p>
     </section>
 
     <!-- Controls -->
     <section id="controls" class="controls" hidden>
       <div class="file-meta">
         <span id="fileName" class="file-name">—</span>
-        <span id="filePages" class="badge">0 pages</span>
+        <span id="filePages" class="badge">共 0 页</span>
       </div>
 
       <div class="control-grid">
         <label class="field">
-          <span class="field-label">Format</span>
+          <span class="field-label">格式</span>
           <select id="formatSelect">
-            <option value="image/png" selected>PNG (lossless)</option>
-            <option value="image/jpeg">JPEG (smaller files)</option>
+            <option value="image/png" selected>PNG（无损）</option>
+            <option value="image/jpeg">JPEG（体积更小）</option>
           </select>
         </label>
 
         <label class="field" id="qualityField" hidden>
-          <span class="field-label">JPEG quality <output id="qualityOut">92%</output></span>
+          <span class="field-label">JPEG 质量 <output id="qualityOut">92%</output></span>
           <input type="range" id="qualityRange" min="0.4" max="1" step="0.01" value="0.92" />
         </label>
 
         <label class="field">
-          <span class="field-label">Resolution <output id="scaleOut">2×</output></span>
-          <input type="range" id="scaleRange" min="1" max="3" step="0.5" value="2" />
+          <span class="field-label">清晰度 <output id="scaleOut">2×（高清）</output></span>
+          <input type="range" id="scaleRange" min="1" max="4" step="0.5" value="2" />
         </label>
 
         <div class="field actions">
-          <button id="renderBtn" class="btn btn-primary" type="button">Convert pages</button>
-          <button id="zipBtn" class="btn btn-secondary" type="button" disabled>Download all (ZIP)</button>
-          <button id="resetBtn" class="btn btn-ghost" type="button">Start over</button>
+          <button id="renderBtn" class="btn btn-primary" type="button">转换全部页面</button>
+          <button id="zipBtn" class="btn btn-secondary" type="button" disabled>打包下载（ZIP）</button>
+          <button id="resetBtn" class="btn btn-ghost" type="button">重新开始</button>
         </div>
       </div>
 
       <div id="progressWrap" class="progress-wrap" hidden>
         <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-        <span id="progressText" class="progress-text">Rendering…</span>
+        <span id="progressText" class="progress-text">正在渲染…</span>
       </div>
     </section>
 
     <!-- Errors -->
     <div id="errorBox" class="error-box" role="alert" hidden></div>
+
+    <!-- 点击提示 -->
+    <p id="pagesHint" class="pages-hint" hidden>提示：点击任意缩略图，可在新标签页查看该页的全分辨率大图。</p>
 
     <!-- Thumbnails -->
     <section id="pages" class="pages" aria-live="polite"></section>
@@ -84,7 +87,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>Built with <a href="https://mozilla.github.io/pdf.js/" rel="noopener">pdf.js</a> &amp; <a href="https://stuk.github.io/jszip/" rel="noopener">JSZip</a>, bundled locally. Open-source, client-side, no upload.</p>
+      <p>基于本地打包的 <a href="https://mozilla.github.io/pdf.js/" rel="noopener">pdf.js</a> 与 <a href="https://stuk.github.io/jszip/" rel="noopener">JSZip</a> 构建。开源、纯前端、不上传。</p>
     </div>
   </footer>
 

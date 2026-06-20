@@ -43,6 +43,17 @@ const SAMPLE = path.join(ROOT, "test", "sample.pdf");
     console.log((cond ? "PASS" : "FAIL") + "  " + name + (detail ? "  — " + detail : ""));
   }
 
+  // Decode a rendered page's blob into an Image and read its natural pixel size.
+  function measureBlob(pg, idx) {
+    return pg.evaluate((i) => new Promise((resolve, reject) => {
+      const r = window.__pdf2img.state.rendered[i];
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight, size: r.blob.size });
+      img.onerror = () => reject(new Error("img decode failed"));
+      img.src = URL.createObjectURL(r.blob);
+    }), idx);
+  }
+
   await page.goto(INDEX, { waitUntil: "networkidle0" });
 
   // libs loaded?
@@ -62,7 +73,30 @@ const SAMPLE = path.join(ROOT, "test", "sample.pdf");
   // Wait for controls to reveal + page count.
   await page.waitForSelector("#controls:not([hidden])", { timeout: 8000 });
   const pageCountText = await page.$eval("#filePages", (e) => e.textContent);
-  assert("PDF loaded & page count shown", /3 pages/.test(pageCountText), pageCountText);
+  assert("PDF loaded & page count shown", /共\s*3\s*页/.test(pageCountText), pageCountText);
+
+  // (c) Key UI strings are in Chinese.
+  const i18n = await page.evaluate(() => ({
+    title: document.title,
+    lang: document.documentElement.lang,
+    renderBtn: document.getElementById("renderBtn").textContent,
+    zipBtn: document.getElementById("zipBtn").textContent,
+    resetBtn: document.getElementById("resetBtn").textContent,
+    scaleOut: document.getElementById("scaleOut").textContent,
+    privacy: document.querySelector(".privacy").textContent,
+  }));
+  assert("UI is in Chinese (lang + key strings)",
+    i18n.lang === "zh-CN" &&
+    i18n.renderBtn.includes("转换") &&
+    i18n.zipBtn.includes("打包") &&
+    i18n.resetBtn.includes("重新开始") &&
+    /高清/.test(i18n.scaleOut) &&
+    /私密/.test(i18n.privacy),
+    JSON.stringify(i18n));
+
+  // (a) Default render scale should be high-res (>= 2x).
+  const scaleVal = await page.$eval("#scaleRange", (e) => parseFloat(e.value));
+  assert("default scale >= 2 (sharp output)", scaleVal >= 2, "scale=" + scaleVal);
 
   // Convert (PNG default).
   await page.click("#renderBtn");
@@ -88,6 +122,29 @@ const SAMPLE = path.join(ROOT, "test", "sample.pdf");
   const dlInfo = await page.$$eval(".dl-btn", (as) => as.map((a) => ({ dl: a.download, href: a.href.slice(0, 5) })));
   assert("per-page download links set", dlInfo.length === 3 && dlInfo.every((d) => /page-\d{3}\./.test(d.dl) && d.href === "blob:"), JSON.stringify(dlInfo[0]));
 
+  // (b) Clicking a thumbnail opens the FULL-resolution blob in a new tab.
+  const openInfo = await page.evaluate(() => {
+    return new Promise((resolve) => {
+      const orig = window.open;
+      let captured = null;
+      window.open = (url, target) => { captured = { url: url, target: target }; return null; };
+      const thumb = document.querySelector(".page-thumb");
+      thumb.click();
+      window.open = orig;
+      // The clicked URL must match the page's full-res blob URL in app state.
+      const fullUrl = window.__pdf2img.state.rendered[0].url;
+      resolve({ captured: captured, matchesFull: captured && captured.url === fullUrl });
+    });
+  });
+  assert("thumbnail click opens full-res blob in new tab",
+    openInfo.captured && /^blob:/.test(openInfo.captured.url) &&
+    openInfo.captured.target === "_blank" && openInfo.matchesFull,
+    JSON.stringify(openInfo.captured));
+
+  // (a) Capture the 2x (default) output pixel dimensions to compare against a 1x baseline later.
+  const hiDims = await measureBlob(page, 0);
+  assert("default (2x) output has real pixels", hiDims.w > 0 && hiDims.h > 0, JSON.stringify(hiDims));
+
   // Build a ZIP in-page and check the bytes start with the PK signature.
   const zipCheck = await page.evaluate(async () => {
     const zip = new JSZip();
@@ -112,6 +169,32 @@ const SAMPLE = path.join(ROOT, "test", "sample.pdf");
     return { size: r.blob.size, type: r.blob.type };
   });
   assert("JPEG render produces jpeg blob", jpegInfo.type === "image/jpeg" && jpegInfo.size > 100, JSON.stringify(jpegInfo));
+
+  // (a) Re-render the SAME page at 1x (PNG) as a baseline and confirm the default
+  // 2x output is meaningfully larger in pixels — proving the sharpness fix.
+  await page.select("#formatSelect", "image/png");
+  await page.evaluate(() => {
+    const s = document.getElementById("scaleRange");
+    s.value = "1";
+    s.dispatchEvent(new Event("input"));
+  });
+  await page.click("#renderBtn");
+  await page.waitForFunction(
+    () => window.__pdf2img.state.rendered.length === 3 && window.__pdf2img.state.rendered[0].ext === "png" && !window.__pdf2img.state.rendering,
+    { timeout: 20000 }
+  );
+  const loDims = await measureBlob(page, 0);
+  // 2x default should be ~2x the 1x baseline in each dimension (allow rounding slack).
+  assert("default 2x output is sharper than 1x baseline (larger pixels)",
+    hiDims.w >= loDims.w * 1.8 && hiDims.h >= loDims.h * 1.8,
+    "2x=" + hiDims.w + "x" + hiDims.h + " vs 1x=" + loDims.w + "x" + loDims.h);
+
+  // Restore default scale for any later checks / parity with normal use.
+  await page.evaluate(() => {
+    const s = document.getElementById("scaleRange");
+    s.value = "2";
+    s.dispatchEvent(new Event("input"));
+  });
 
   // Error handling: feed a non-PDF, expect a visible error and no crash.
   const junk = path.join(ROOT, "test", "not-a-pdf.txt");
